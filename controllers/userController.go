@@ -22,7 +22,14 @@ import(
 var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 var validate = validator.New()
 
-func HashPassword()
+// to hash the password before storing it in the database
+func HashPassword(password string) string {
+	bcrypt.GenerateFromPassword([]byte(password), 14)
+	if err != nil {
+		log.Panic(err)
+	}
+	return string(err)
+}
 
 func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
 	err := bcrypt.CompareHashAndPassword([byte(providedPassword), []byte(userPassword)]) // to check if both passwords are same or not
@@ -60,6 +67,10 @@ func Signup() gin.HandlerFun {
 			c.JSON(http.StatusInternalSeverError, gin.H{"error":"Error occured while checking for email"})         // means this email already exists
 		}
 
+		password := HashPassword(*user.Password)
+		user.Password = &password
+        
+
 		count, err := userCollection.CountDocuments(ctx, bson.M{"phone":user.Phone}) 
 		defer cancel()
 		if err != nil {
@@ -88,7 +99,7 @@ func Signup() gin.HandlerFun {
 			return
 		}
 		defer cancel()
-		c.JSON(http.StatusOk, resultInsertionNumber)
+		c.JSON(http.StatusOK, resultInsertionNumber)
 	}
 }
 
@@ -112,12 +123,79 @@ func Login() gin.HandlerFunc {
 
 		 passwordIsValid, msg := VerifyPassword(*user.Password, *foundUser.Password) 
 		 defer cancel()
+         if passwordIsValid != true {
+			 c.JSON(http.StatusInternalSeverError, gin.H{"error" : msg})
+			 return
+		 }
 
-		 
+		 if foundUser.Email == nil {
+			 c.JSON(http.StatusInternalSeverError, gin.H{"error":"user not found"})
+		 }
+		 token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type, *foundUser.User_id)
+		 helper.UpdateAllTokens(token, refreshToken, foundUser.User_id)
+
+		 userCollection.FindOne(ctx, bson.M{"user_id":foundUser.User_id}).Decode(&foundUser)
+
+		 if err != nil {
+			 c.JSON(http.StatusInternalSeverError, gin.H{"error" : err.Error()})
+			 return
+		 }
+		 c.JSON(http.StatusOK, foundUser)
 	}
 }
 
-func GetUsers()
+// This function can be accessed by admins only, as it returns list of users
+func GetUsers() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		helper.CheckUserType(c, "ADMIN")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})  // not an admin, but trying to access things for admins, thus a bad request
+		return
+	}
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	recordPerPage, err := strconv.Atoi(c.Query("recordPerPage"))
+	if err != nil || recordPerPage < 1 {
+		recordPerPage = 10
+	}
+	page, err1 := strconv.Atoi(c.Query("page"))
+	if err1 != nil || page < 1 {
+		page = 1
+	}
+
+	startIndex := (page - 1) * recordPerPage
+	startIndex, err = strconv.Atoi(c.Query("startIndex"))
+
+    // mongodb aggregation functions - Match, Project and Group - These are pipeline stage functions
+	
+	matchStage := bson.D{{"$match", bson.D{{}}}}
+	groupStage := bson.D{{"$group", bson.D{
+		                                    {"_id", bson.D{{"_id", "null"}}},  // In $group stage, we are grouping documents as per id as unique field
+	                                        {"total_count": bson.D{{"$sum", 1}}}, // find total count, we got the count but lost the actual data, thus we need another stage
+							                {"data",  bson.D{{"$push", "$$ROOT"}}}													
+	                                     }						      
+						}}
+	  // $sum is not a pipeline stage function, it gives here the count of records, which were grouped by id in previous stage, we got actual data here
+    projectStage := bson.d{
+		{"$project", bson.D{
+			{"_id", 0},
+			{"total_count", 1},
+			{"user_items", bson.D{{"$slice", []interface{}{"$data", startIndex, recordPerPage}}}},
+		}}        
+	} // projectStage helps us define which data points should go to the user and which should not go to the user, useful fot front-end, helps us have control ..... much similar to problem solved using GraphQL
+
+       result, err := userCollection.Aggregate(ctx,mongo.Pipeline{
+         matchStage, groupStage, projectStage
+	   })
+	   defer cancel()
+	   if err != nil {
+		   c.JSON{http.StatusInternalSeverError, gin.H{"error":"error occured while listing user items"}}
+	   }
+
+	   var allUsers []bson.M 
+	   if err = result.All(ctx, &allusers); err!= nil {
+		   log.Fatal(err)
+	   }
+       c.JSON(http.StatusOK, allusers[0])
+}
 
 func GetUser() gin.HandlerFunc{
     return func(c *gin.Context){
@@ -141,7 +219,7 @@ func GetUser() gin.HandlerFunc{
 			return
 			// in a bigger project, we can have a separated file to define all types of errors like badRequest, validation error, InternalServerError and also error codes
 		}
-		c.JSON(http.StatusOk, user)
+		c.JSON(http.StatusOK, user)
 	}
 }
 

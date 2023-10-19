@@ -11,7 +11,8 @@ go get github.com/gin-gonic/gin    ====similar to======= npm install
 What does this mean?
 warning: in the working copy of 'go.sum', LF will be replaced by CRLF the next time Git touches it
 
-Project flow: models => main.go => routes folder => database => 
+Project flow: models => main.go => routes folder => database => controllers
 
 This project structure is best for monilithic projects. It can be scaled to large number of users.
 We will see how to create microservice project structure when we learn microservices using GRPC.
+
