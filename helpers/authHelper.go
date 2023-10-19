@@ -1,10 +1,10 @@
 package helper
 
-import{
+// With import we use "(" and not "{"
+import(
 	"errors"
 	"github.com/gin-gonic/gin"
-
-}
+)
 
 func CheckUserType (c *gin.Context, role string) (err error) {
 	userType := c.GetString("user_type")

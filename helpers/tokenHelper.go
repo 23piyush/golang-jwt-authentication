@@ -6,7 +6,7 @@ import(
 	"log"  // to print out errors
 	"os"
 	"time"
-	"golang-jwt-project/database"
+	"github.com/23piyush/golang-jwt-project/database"
 	jwt "github.com/dgrijalva/jwt-go" // In nodejs, you have to do npm for jwt
 	// someone has created a golang-driver for jwt for us which we will use
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,8 +30,8 @@ type SignedDetails struct {
 var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 var SECRET_KEY string = os.Getenv("SECRET_KEY")
 
-func GenerateAllTokens (email string, firstName string, lastName string, userType string, uid string) (signedToken string, signedRefreshToken string) {
-	claims := $SignedDetails{
+func GenerateAllTokens (email string, firstName string, lastName string, userType string, uid string) (signedToken string, signedRefreshToken string, err error) {
+	claims := &SignedDetails{
 		Email : email,
 		First_name : firstName,
 		Last_name : lastName,
@@ -45,7 +45,7 @@ func GenerateAllTokens (email string, firstName string, lastName string, userTyp
 	// refreshToken is used to get a new token, if our regular token has expired
 	refreshClaims := &SignedDetails{
 		StandardClaims : jwt.StandardClaims{
-          ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).unix(),
+          ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
 		},
 	}
 
@@ -61,10 +61,39 @@ func GenerateAllTokens (email string, firstName string, lastName string, userTyp
 	return token, refreshToken, err 
 }
 
+func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
+	token, err := jwt.ParseWithClaims(
+		signedToken,
+		&SignedDetails{},
+		func(token *jwt.Token)(interface{}, error) {
+             return []byte(SECRET_KEY), nil
+		},
+	)
+	if err != nil {
+		msg = err.Error()
+		return
+	}
+
+	claims, ok := token.Claims.(*SignedDetails)
+	if !ok {
+		msg = fmt.Sprintf("the token is invalid") // someone is sending wrong tokens to access those routes
+		msg = err.Error()
+		return
+	}
+
+	// claims has all the information that the user has
+    if claims.ExpiresAt < time.Now().Local().Unix() { // check if the token has expired
+		msg = fmt.Sprintf("token is expired")
+		msg = err.Error()
+		return
+	}
+
+	return claims, msg
+}
 
 // Everytime you login, you will get a new token, new refreshed token
 func UpdateAllTokens (signedToken string, signedRefreshToken string, userId string) {
-	var ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	var updateObj primitive.D
 
@@ -77,14 +106,14 @@ func UpdateAllTokens (signedToken string, signedRefreshToken string, userId stri
 	upsert := true
 	filter := bson.M{"user_id" : userId}
 	opt := options.UpdateOptions{
-		Upsert: &upsert
+		Upsert: &upsert,
 	}
 
 	 _ , err := userCollection.UpdateOne(
 		ctx,  // to update that particular user
 		filter, // using userid
 		bson.D{
-			{"$set", updateObj}
+			{"$set", updateObj},   // You will get syntax error without this ","
 		},
 		&opt,
 	 )

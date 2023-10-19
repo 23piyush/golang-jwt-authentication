@@ -9,7 +9,7 @@ type User struct{
 	// will act as middle-layer between golang-program and mongoDB-database
     // database understands json and golang doesn't understands, may ne string 
 	// we need a layer for inter-conversion
-	ID             primitive.objectID    `bson:"_id`
+	ID             primitive.ObjectID    `bson:"_id`
 	First_name     *string               `json:"first_name" validate:"required, min=2, max=100"`
 	// In postman or otherwise : "First_name", but in database : "first_name"
 	// min 2 characters and max 100 characters
@@ -20,7 +20,7 @@ type User struct{
 	Token          *string                `json:"token"`
 	User_type      *string                `json:"user_type" validate:"required, eq=ADMIN|eq=USER"`
 	Refresh_token  *string                `json:"refresh_token"`
-	Created_at     *time.time             `json:"created_at"`
-	Updated_at     *time.time             `json:"updated_at"`
-	User_id        *string                `json:"user_id"`
+	Created_at     time.Time             `json:"created_at"`
+	Updated_at     time.Time             `json:"updated_at"`
+	User_id        string                `json:"user_id"`
 }

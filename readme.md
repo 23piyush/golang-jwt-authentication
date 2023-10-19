@@ -16,3 +16,13 @@ Project flow: models => main.go => routes folder => database => controllers
 This project structure is best for monilithic projects. It can be scaled to large number of users.
 We will see how to create microservice project structure when we learn microservices using GRPC.
 
+To run the project : 
+1. go mod tidy => this command will install all the packages that we included but not installed
+2. go run main.go
+
+
+
+":=" symbol is used for short variable declaration and assignment. It allows you to declare and initialize a variable in a concise manner.
+
+Golang gives very accurate errors. Really helpful in debugging.
+string is immutable. To change them, use bytes
