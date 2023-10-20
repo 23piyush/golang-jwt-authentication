@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:4.4
+    container_name: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
+    command: mongod            # The command to run inside the container, which in this case is mongod to start the MongoDB daemon.
+
+  go-app:
+    build:
+      context: .
+      # dockerfile: Dockerfile.prod   # The dockerfile parameter is optional and can be used to specify a different Dockerfile name or path if it is not in the default location (./my-app/Dockerfile).                
+    ports:
+      - 8080:8080
+    depends_on:        #ensures that the go-app service starts after the mongo service is up and running.
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://192.168.58.1:27017/auth
+      - PORT=9000
