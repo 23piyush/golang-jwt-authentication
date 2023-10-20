@@ -45,20 +45,21 @@ func VerifyPassword(userPassword string, providedPassword string) (bool, string)
 
 func Signup() gin.HandlerFunc {
 	return func(c *gin.Context){
+		fmt.Println("here1");
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		var user models.User // SignUp function creates a user in the database
-
+        fmt.Println("here2");
         if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
+        fmt.Println("here3");
 		validationErr := validate.Struct(user)  // check if data available in "user" satisties the constraints in "userModel.go" or not
 		if validationErr != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error":validationErr.Error()})
 			return
 		}
-
+        fmt.Println("here4");
 		// count will also help us validate the user
 		count, err := userCollection.CountDocuments(ctx, bson.M{"email":user.Email}) 
 		defer cancel()
@@ -66,10 +67,9 @@ func Signup() gin.HandlerFunc {
 			log.Panic(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error":"Error occured while checking for email"})         // means this email already exists
 		}
-    
+        fmt.Println("here5");
 		password := HashPassword(*user.Password)
 		user.Password = &password
-        
 
 		count, err = userCollection.CountDocuments(ctx, bson.M{"phone":user.Phone}) 
 		defer cancel()

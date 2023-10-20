@@ -26,3 +26,16 @@ To run the project :
 
 Golang gives very accurate errors. Really helpful in debugging.
 string is immutable. To change them, use bytes
+
+To check if mongod service is running or not:
+netstat -ano | findstr :27017    
+mongod => this command starts the mongod server as a standalone process
+
+net start MongoDB
+If you installed MongoDB as a Windows service, this command should start the MongoDB service.
+
+linux : sudo service mongod start
+windows : win+R => services.msc => Select MongoDb => Right click => select start
+
+My error reason: The data directory for MongoDB (C:\mongodb-data) is not found. MongoDB requires a data directory to store its data files.
+>>mongod --dbpath C:\mongodb-data
