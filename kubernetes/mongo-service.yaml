@@ -1,0 +1,21 @@
+apiVersion: v1     # Specifies the API version for the Service resource
+kind: Service      # Defines the kind of Kubernetes resource, in this case, a Service
+metadata:
+  name: mongodb
+spec:              # Specifies the desired state of the Service
+  selector:        # Defines the labels used to select the Pods that the Service will route traffic to
+    app: mongo
+  ports:           # Specifies the ports that the Service will listen on and forward traffic to the selected Pods
+    - port: 27017
+      targetPort: 27017
+  type: NodePort
+
+# The above YAML code is a Kubernetes Service manifest that defines a Service for the MongoDB Deployment.
+# This Service manifest creates a Service named mongodb that selects Pods with the label app: mongo. The Service listens on port 27017 and forwards traffic to the Pods on the same port. The Service is of type NodePort, making it accessible on a high-numbered port on each node in the Kubernetes cluster.
+# In the context of Kubernetes Services, "high-numbered port" refers to a port number in the range of 30000-32767. These port numbers are commonly used for NodePort Services.
+
+# When you define a Service with the `type: NodePort`, Kubernetes assigns a random port number from the high-numbered range on each node in the cluster. This assigned port is used to access the Service from outside the cluster. For example, if the assigned port is 31500, you can access the Service by sending traffic to `<NodeIP>:31500`, where `<NodeIP>` is the IP address of any node in the cluster.
+
+# The purpose of using high-numbered ports is to avoid conflicts with well-known ports (0-1023) that are typically reserved for standard services. By using high-numbered ports, Kubernetes can provide a range of ports that are less likely to conflict with other services running on the nodes.
+
+# It's important to note that the assigned port on each node is the same for all nodes in the cluster. The traffic sent to any node's IP address on that specific port will be routed to the Service and then to the Pods selected by the Service's selector.

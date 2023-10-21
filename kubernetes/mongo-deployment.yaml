@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+spec:                                 # Specifies the desired state of the Deployment
+  selector:                           # Defines the labels used to select which Pods the Deployment manages.
+    matchLabels:                      # Specifies the labels used for selecting Pods.
+      app: mongo
+  template:                           # Describes the desired state of the Pods controlled by the Deployment.
+    metadata:                         # Contains metadata about the Pod template
+      labels:                         # Specifies the labels for the Pods. In this case, it sets the label app: mongo
+        app: mongo
+    spec:                             # Specifies the desired state of the Pods
+      containers:                     # Defines the containers to be run in the Pod
+        - name: mongo
+          image: mongo
+          ports:
+            - containerPort: 27017
+          volumeMounts:               # Mounts a volume to the container
+            - name: storage           # Specifies the name of the volume
+              mountPath: /data/db     # Specifies the path within the container where the volume will be mounted
+      volumes:                        # Defines the volumes to be used by the Pod
+        - name: storage               # Specifies the name of the volume
+          persistentVolumeClaim:      # Specifies a persistent volume claim (PVC) to be used by the volume
+            claimName: mongo-pvc

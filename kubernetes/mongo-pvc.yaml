@@ -1,0 +1,12 @@
+apiVersion: v1                  # Specifies the API version for the PersistentVolumeClaim resource
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+spec:                           # Specifies the desired state of the PersistentVolumeClaim
+  accessModes:
+    - ReadWriteOnce
+  resources:                    # Specifies the resource requirements for the PersistentVolumeClaim
+    requests:                   # Specifies the requested resources for the PersistentVolumeClaim
+      storage: 256Mi
+
+# This PersistentVolumeClaim manifest defines a PersistentVolumeClaim named mongo-pvc with an access mode of ReadWriteOnce and requests 256Mi of storage. A PersistentVolumeClaim is used by applications to request a specific amount of storage with a specific access mode. The PersistentVolumeClaim can then be bound to a suitable PersistentVolume (such as the mongo-pv mentioned earlier) to provide the requested storage for the application.
